@@ -1,0 +1,15 @@
+flask
+python-dotenv
+langchain
+langchain-anthropic
+langchain-community
+anthropic
+google-search-results
+tiktoken
+langgraph
+bs4
+pypdf
+langchain-mongodb
+pymongo
+langchain_aws
+gradio

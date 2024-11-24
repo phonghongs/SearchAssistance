@@ -1,0 +1,141 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PDF Chat Application</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      .chat-container {
+        height: 650px;
+        overflow-y: auto;
+      }
+      .pdf-container {
+        height: 680px;
+        overflow-y: auto;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-100 p-4">
+    <div class="container mx-auto">
+      <!-- Main Content -->
+      <div class="flex gap-4">
+        <!-- Chat Section -->
+        <div class="flex-1 bg-white rounded-lg shadow-lg p-4">
+          <div id="chatbox" class="chat-container mb-4"></div>
+          <div class="flex gap-2">
+            <input
+              type="text"
+              id="userInput"
+              placeholder="Enter your message"
+              class="flex-grow p-2 border rounded"
+            />
+            <button
+              onclick="sendMessage()"
+              class="bg-blue-500 text-white px-4 py-2 rounded"
+            >
+              Send
+            </button>
+            <input
+              type="file"
+              id="pdfUpload"
+              accept=".pdf"
+              style="display: none"
+              onchange="uploadPDF(this.files[0])"
+            />
+            <button
+              onclick="document.getElementById('pdfUpload').click()"
+              class="bg-green-500 text-white px-4 py-2 rounded"
+            >
+              📁 Upload PDF
+            </button>
+          </div>
+        </div>
+
+        <!-- PDF Display Section -->
+        <div class="flex-1 bg-white rounded-lg shadow-lg p-4">
+          <div id="pdfDisplay" class="pdf-container">
+            <img id="pdfPage" class="w-full" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      async function uploadPDF(file) {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const response = await fetch("/upload-pdf", {
+          method: "POST",
+          body: formData,
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+          document.getElementById("pdfPage").src = data.image;
+        } else {
+          alert(data.error);
+        }
+      }
+
+      async function sendMessage() {
+        const userInput = document.getElementById("userInput");
+        const message = userInput.value.trim();
+
+        if (!message) return;
+
+        // Add user message to chat
+        addMessageToChat("user", message);
+        userInput.value = "";
+
+        // Send message to server
+        const response = await fetch("/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ message }),
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+          addMessageToChat("assistant", data.response);
+          document.getElementById("pdfPage").src = data.image;
+        } else {
+          alert(data.error);
+        }
+      }
+
+      function addMessageToChat(role, content) {
+        const chatbox = document.getElementById("chatbox");
+        const messageDiv = document.createElement("div");
+        messageDiv.className = `mb-4 ${
+          role === "user" ? "text-right" : "text-left"
+        }`;
+
+        const bubble = document.createElement("div");
+        bubble.className = `inline-block p-2 rounded-lg ${
+          role === "user"
+            ? "bg-blue-500 text-white"
+            : "bg-gray-200 text-gray-800"
+        }`;
+        bubble.textContent = content;
+
+        messageDiv.appendChild(bubble);
+        chatbox.appendChild(messageDiv);
+        chatbox.scrollTop = chatbox.scrollHeight;
+      }
+
+      // Handle Enter key in input
+      document
+        .getElementById("userInput")
+        .addEventListener("keypress", function (e) {
+          if (e.key === "Enter") {
+            sendMessage();
+          }
+        });
+    </script>
+  </body>
+</html>
